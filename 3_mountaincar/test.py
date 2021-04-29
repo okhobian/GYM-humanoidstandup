@@ -32,7 +32,7 @@ actions = env.action_space.n
 
 model = build_model(states, actions)
 dqn = build_agent(model, actions)
-dqn.compile(Adam(lr=1e-3), metrics=['mae'])
+dqn.compile(Adam(lr=1e-3), metrics=['accuracy'])
 dqn.fit(env, nb_steps=50000, visualize=True, verbose=1)
 
 dqn.save_weights('dqn_weights.h5f', overwrite=True)
