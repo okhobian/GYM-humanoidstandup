@@ -4,7 +4,7 @@ import numpy as np
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Convolution2D
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, RMSprop
 from tensorflow.keras.callbacks import CSVLogger
 
 from rl.agents import DQNAgent
@@ -38,8 +38,6 @@ print(action)
 print(height, width, channels)
 
 
-
-
 class CustomerProcessor(Processor):      
     def process_step(self, observation, reward, done, info):
         observation = self.process_observation(observation)
@@ -69,14 +67,11 @@ def build_model(height, width, actions):
     model.add(Dense(actions, activation='linear'))
     return model
 
-model = build_model(height, width, actions)
-model.summary()
-
 def build_callbacks(env_name):
     # checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
     log_filename = INSTANCE_PATH + '\\dqn_{}_log.json'.format(env_name)
     # callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=1000)]
-    callbacks += [FileLogger(log_filename, interval=100)]
+    callbacks += [FileLogger(log_filename)]
     return callbacks
 
 def build_agent(model, actions):
@@ -98,19 +93,21 @@ def build_agent(model, actions):
     )
     return dqn
 
-def train_model():
-    dqn = build_agent(model, actions)
-    dqn.compile(Adam(lr=1e-4))
-    callbacks = build_callbacks(ENV_NAME)
-    dqn.fit(env, 
-            nb_steps=NUM_STEPS, 
-            visualize=False, 
-            callbacks=callbacks, 
-            verbose=2
-    )
-    dqn.save_weights(INSTANCE_PATH + '\\finished_weights.h5f')
 
-train_model()
+model = build_model(height, width, actions)
+model.summary()
+dqn = build_agent(model, actions)
+optimizer = RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
+# optimizer = Adam(lr=1e-4)
+dqn.compile(optimizer, metrics=['mse'])
+callbacks = build_callbacks(ENV_NAME)
+dqn.fit(env, 
+        nb_steps=NUM_STEPS, 
+        visualize=False, 
+        callbacks=callbacks, 
+        verbose=2
+)
+dqn.save_weights(INSTANCE_PATH + '\\finished_weights.h5f')
 
-# scores = dqn.test(env, nb_episodes=10, visualize=True)
-# print(np.mean(scores.history['episode_reward']))
+scores = dqn.test(env, nb_episodes=10, visualize=True)
+print(np.mean(scores.history['episode_reward']))
