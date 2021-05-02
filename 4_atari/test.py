@@ -28,10 +28,15 @@ import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Convolution2D
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import CSVLogger
 
 from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
+from rl.callbacks import ModelIntervalCheckpoint
+from rl.core import Processor
+
+import cv2
 
 # import os
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -39,7 +44,8 @@ from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 
 def build_model(height,width,channels,actions):
     model = Sequential()
-    shape = (3, height, width, channels)
+    # shape = (3, height, width, channels)
+    shape = (3, 210, 160, 1)
     model.add(Convolution2D(32, (8,8), strides=(4,4), activation='relu', input_shape=shape))
     model.add(Convolution2D(64, (4,4), strides=(2,2), activation='relu'))
     model.add(Convolution2D(64, (3,3), activation='relu'))
@@ -52,17 +58,44 @@ def build_model(height,width,channels,actions):
 model = build_model(height,width,channels,actions)
 model.summary()
 
+class CustomerProcessor(Processor):      
+    def process_step(self, observation, reward, done, info):
+        observation = self.process_observation(observation)
+        reward = self.process_reward(reward)
+        info = self.process_info(info)
+        return observation, reward, done, info
+    
+    def process_observation(self, observation):
+        # convert RGB state img to Gray scale
+        img = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
+        img = img.reshape(img.shape[0], img.shape[1], 1)        
+        return img
+    
+    def process_reward(self, reward):
+        return reward
+
 def build_agent(model, actions):
-    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.2, nb_steps=10000)
+    policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 
+                                  attr='eps', 
+                                  value_max=1., 
+                                  value_min=.1, 
+                                  value_test=.2, 
+                                  nb_steps=10000)
     memory = SequentialMemory(limit=1000, window_length=3)
-    dqn = DQNAgent(model=model, memory=memory, policy=policy,
-                enable_dueling_network=True, dueling_type='avg', 
-                nb_actions=actions, nb_steps_warmup=1000
-                )
+    dqn = DQNAgent(model=model, 
+                   processor=CustomerProcessor(), 
+                   memory=memory, policy=policy,
+                   enable_dueling_network=True, 
+                   dueling_type='avg', 
+                   nb_actions=actions, 
+                   nb_steps_warmup=1000
+                   )
     return dqn
 
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-4))
-dqn.fit(env, nb_steps=10000, visualize=True, verbose=2)
+# csv_logger = CSVLogger('training_log.csv', separator=',', append=False)
+# dqn.fit(env, nb_steps=1000, visualize=False, verbose=2, callbacks=[csv_logger])
+dqn.fit(env, nb_steps=10000, visualize=False, verbose=2)
 scores = dqn.test(env, nb_episodes=10, visualize=True)
 print(np.mean(scores.history['episode_reward']))
