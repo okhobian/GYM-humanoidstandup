@@ -17,7 +17,7 @@ import os
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 ENV_NAME = 'Breakout-v0'
-NUM_STEPS = 10000
+NUM_STEPS = 100000
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 INSTANCE_PATH = os.path.join(DIR_PATH, 'logs', '{}_steps'.format(NUM_STEPS))
@@ -67,12 +67,8 @@ def build_model(height, width, actions):
     model.add(Dense(actions, activation='linear'))
     return model
 
-def build_callbacks(env_name):
-    # checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
-    log_filename = INSTANCE_PATH + '\\dqn_{}_log.json'.format(env_name)
-    # callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=1000)]
-    callbacks += [FileLogger(log_filename, interval=100)]
-    return callbacks
+model = build_model(height, width, actions)
+model.summary()
 
 def build_agent(model, actions):
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 
@@ -93,9 +89,14 @@ def build_agent(model, actions):
     )
     return dqn
 
+def build_callbacks(env_name):
+    # checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
+    log_filename = INSTANCE_PATH + '\\dqn_{}_log.json'.format(env_name)
+    # callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=1000)]
+    callbacks = [FileLogger(log_filename)]
+    return callbacks
 
-model = build_model(height, width, actions)
-model.summary()
+
 dqn = build_agent(model, actions)
 optimizer = RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
 # optimizer = Adam(lr=1e-4)
