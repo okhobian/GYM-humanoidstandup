@@ -33,8 +33,8 @@ from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 
-import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def build_model(height,width,channels,actions):
