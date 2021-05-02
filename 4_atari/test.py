@@ -71,7 +71,7 @@ def build_callbacks(env_name):
     # checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
     log_filename = INSTANCE_PATH + '\\dqn_{}_log.json'.format(env_name)
     # callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=1000)]
-    callbacks += [FileLogger(log_filename)]
+    callbacks += [FileLogger(log_filename, interval=100)]
     return callbacks
 
 def build_agent(model, actions):
