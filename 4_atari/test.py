@@ -1,7 +1,7 @@
 import gym
 import random
 
-env = gym.make('SpaceInvaders-v0')
+env = gym.make('Breakout-v0')
 height, width, channels = env.observation_space.shape
 actions = env.action_space.n
 
@@ -17,7 +17,7 @@ print(height, width, channels)
     
 #     while not done:
 #         env.render()
-#         action = random.choice([0,1,2,3,4,5])
+#         action = random.choice([0,1,2,3])
 #         n_state, reward, done, info = env.step(action)
 #         score+=reward
 #     print('Episode:{} Score"{}'.format(episode,score))
@@ -33,8 +33,8 @@ from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 
-# import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 def build_model(height,width,channels,actions):
@@ -52,8 +52,6 @@ def build_model(height,width,channels,actions):
 model = build_model(height,width,channels,actions)
 model.summary()
 
-
-
 def build_agent(model, actions):
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.2, nb_steps=10000)
     memory = SequentialMemory(limit=1000, window_length=3)
@@ -66,5 +64,5 @@ def build_agent(model, actions):
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-4))
 dqn.fit(env, nb_steps=10000, visualize=True, verbose=2)
-scores = dqn.test(env, nb_eqisodes=10, visualize=True)
-print(np.mean(scres.history['episode_reward']))
+scores = dqn.test(env, nb_episodes=10, visualize=True)
+print(np.mean(scores.history['episode_reward']))
