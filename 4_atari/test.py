@@ -17,10 +17,10 @@ import os
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 ENV_NAME = 'Breakout-v0'
-NUM_STEPS = 100000
+NUM_STEPS = 500000
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-INSTANCE_PATH = os.path.join(DIR_PATH, 'logs', '{}_steps'.format(NUM_STEPS))
+INSTANCE_PATH = os.path.join(DIR_PATH, 'logs', ENV_NAME, '{}_steps'.format(NUM_STEPS))
 CHECKPOINTS_PATH = os.path.join(INSTANCE_PATH, 'checkpoints')
 
 # print(INSTANCE_PATH)
@@ -85,21 +85,21 @@ def build_agent(model, actions):
                    enable_dueling_network=True, 
                    dueling_type='avg', 
                    nb_actions=actions, 
-                   nb_steps_warmup=50
+                   nb_steps_warmup=1000
     )
     return dqn
 
 def build_callbacks(env_name):
-    # checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
+    checkpoint_weights_filename = CHECKPOINTS_PATH + '\\dqn_' + env_name + '_weights_{step}.h5f'
     log_filename = INSTANCE_PATH + '\\dqn_{}_log.json'.format(env_name)
-    # callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=1000)]
-    callbacks = [FileLogger(log_filename)]
+    callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=50000)]
+    callbacks += [FileLogger(log_filename, interval=500)]
     return callbacks
 
 
 dqn = build_agent(model, actions)
-optimizer = RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
-# optimizer = Adam(lr=1e-4)
+# optimizer = RMSprop(lr=0.00025, rho=0.95, epsilon=0.01)
+optimizer = Adam(lr=1e-4)
 dqn.compile(optimizer, metrics=['mse'])
 callbacks = build_callbacks(ENV_NAME)
 dqn.fit(env, 
