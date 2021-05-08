@@ -131,5 +131,4 @@ dmypy.json
 
 # vscode environment
 .vscode
-logs
-.xlsx
+*.xlsx
